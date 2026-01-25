@@ -1,34 +1,41 @@
 // controllers/videoController.js
-const favoritesService = require('../services/favoritesService');
 
-// A small "mock" list of videos (no client project, no API required)
-const MOCK_VIDEOS = [
-    { id: 'v1', title: 'JavaScript Basics - Variables and Functions' },
-    { id: 'v2', title: 'Node.js Express MVC Tutorial' },
-    { id: 'v3', title: 'SQLite for Beginners (CRUD)' },
-    { id: 'v4', title: 'Sessions & Authentication in Express' },
-    { id: 'v5', title: 'Bootstrap Quick Start - Layout and Components' },
-    { id: 'v6', title: 'Async/Await Explained Simply' },
-];
+const favoritesService = require('../services/favoritesService');
+const { searchYouTube } = require("../services/youtubeService");
 
 // GET /videos?q=...
 async function showVideosPage(req, res) {
     const user = req.session.user; // { id, email, fullName }
-    const q = (req.query.q || '').trim().toLowerCase();
+    const qRaw = (req.query.q || '').trim();
 
-    // Filter mock results by query
-    const results = q
-        ? MOCK_VIDEOS.filter(v => v.title.toLowerCase().includes(q))
-        : [];
+    let results = [];
+    let error = null;
+
+    try {
+        if (qRaw) {
+            // Call YouTube API (returns normalized objects)
+            const ytResults = await searchYouTube(qRaw, 10);
+
+            // Keep your old view structure: results with {id, title}
+            results = ytResults.map(v => ({
+                id: v.videoId,
+                title: v.title,
+            }));
+        }
+    } catch (e) {
+        error = e.message || "YouTube search failed";
+        results = [];
+    }
 
     // Load favorites from DB for the logged-in user
     const favorites = await favoritesService.getUserFavorites(user.id);
 
     res.render('videos', {
         user,
-        q: req.query.q || '',
+        q: qRaw,
         results,
-        favorites
+        favorites,
+        error,
     });
 }
 
@@ -37,6 +44,7 @@ async function saveFavorite(req, res) {
     const user = req.session.user;
     const { videoId, title } = req.body;
 
+    // You already store favorites as { id, title }
     await favoritesService.saveFavorite(user.id, { id: videoId, title });
 
     // Redirect back to the videos page (keep the search query if exists)
@@ -44,7 +52,7 @@ async function saveFavorite(req, res) {
     res.redirect(backTo);
 }
 
-// POST /favorites/delete (optional remove)
+// POST /favorites/delete (remove)
 async function deleteFavorite(req, res) {
     const user = req.session.user;
     const { videoId } = req.body;

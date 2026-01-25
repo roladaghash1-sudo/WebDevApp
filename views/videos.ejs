@@ -44,37 +44,53 @@
                     </div>
                 </form>
 
-                <% if (results.length> 0) { %>
-                    <hr />
-                    <h6 class="mb-3">Results (top section)</h6>
-
-                    <div class="list-group">
-                        <% results.forEach(v=> { %>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-semibold">
-                                        <%= v.title %>
-                                    </div>
-                                    <div class="text-muted small">Video ID: <%= v.id %>
-                                    </div>
-                                </div>
-
-                                <form method="POST" action="/favorites" class="m-0">
-                                    <input type="hidden" name="videoId" value="<%= v.id %>" />
-                                    <input type="hidden" name="title" value="<%= v.title %>" />
-                                    <input type="hidden" name="backTo" value="/videos?q=<%= encodeURIComponent(q) %>" />
-                                    <button class="btn btn-success btn-sm" type="submit">Save</button>
-                                </form>
-                            </div>
-                            <% }) %>
+                <% if (error) { %>
+                    <div class="alert alert-danger mt-3 mb-0">
+                        <%= error %>
                     </div>
-                    <% } else if (q && q.trim().length> 0) { %>
-                        <hr />
-                        <div class="alert alert-warning m-0">No results found.</div>
-                        <% } %>
+                    <% } %>
+
+                        <% if (results && results.length> 0) { %>
+                            <hr />
+                            <h6 class="mb-3">Results (top section)</h6>
+
+                            <div class="list-group">
+                                <% results.forEach(v=> { %>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">
+                                                <%= v.title %>
+                                            </div>
+                                            <div class="text-muted small">Video ID: <%= v.id %>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            <a class="btn btn-outline-secondary btn-sm" target="_blank"
+                                                href="https://www.youtube.com/watch?v=<%= v.id %>">
+                                                Open
+                                            </a>
+
+                                            <form method="POST" action="/favorites" class="m-0">
+                                                <input type="hidden" name="videoId" value="<%= v.id %>" />
+                                                <input type="hidden" name="title" value="<%= v.title %>" />
+                                                <input type="hidden" name="backTo"
+                                                    value="/videos?q=<%= encodeURIComponent(q) %>" />
+                                                <button class="btn btn-success btn-sm" type="submit">Save</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <% }) %>
+                            </div>
+
+                            <% } else if (q && q.trim().length> 0 && !error) { %>
+                                <hr />
+                                <div class="alert alert-warning m-0">No results found.</div>
+                                <% } %>
 
             </div>
         </div>
+
 
         <!-- Favorites section (Bottom) -->
         <div class="card">
